@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from pathlib import Path
 from ultralytics import YOLO
 
@@ -66,7 +67,20 @@ if file:
 
             data.append({
                 "Defect Type": name,
-                "Confidence": f"{confidence:.2%}"
+                "Confidence": confidence
             })
 
-        st.table(data)
+        df = pd.DataFrame(data)
+
+        display_df = df.copy()
+        display_df["Confidence"] = display_df["Confidence"].map(
+            lambda x: f"{x:.2%}"
+        )
+
+        st.table(display_df)
+
+        st.subheader("Defect Distribution")
+
+        counts = df["Defect Type"].value_counts()
+
+        st.bar_chart(counts)
