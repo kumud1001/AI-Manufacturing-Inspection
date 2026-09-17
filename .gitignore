@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# YOLO models and training outputs
+*.pt
+*.pth
+*.onnx
+results/
+runs/
+
+# Dataset
+DataPCB_Final_Clean_6cls/
+
+# Prediction outputs
+predictions/
+
+# Environment files
+.env
