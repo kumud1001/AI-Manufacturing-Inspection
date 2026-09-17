@@ -5,6 +5,7 @@ from ultralytics import YOLO
 
 ROOT = Path(__file__).resolve().parent
 MODEL = ROOT / "results" / "quick_test" / "weights" / "best.pt"
+HISTORY = ROOT / "inspection_history.csv"
 
 model = YOLO(MODEL)
 
@@ -43,6 +44,11 @@ if file:
 
     defect_count = len(result.boxes)
 
+    if defect_count == 0:
+        status = "PASS"
+    else:
+        status = "DEFECT DETECTED"
+
     st.subheader("Inspection Summary")
 
     col1, col2 = st.columns(2)
@@ -51,14 +57,12 @@ if file:
         st.metric("Defect Count", defect_count)
 
     with col2:
-        if defect_count == 0:
-            st.success("PASS")
+        if status == "PASS":
+            st.success(status)
         else:
-            st.error("DEFECT DETECTED")
+            st.error(status)
 
     if defect_count > 0:
-        st.subheader("Detected Defects")
-
         data = []
 
         for box in result.boxes:
@@ -77,10 +81,40 @@ if file:
             lambda x: f"{x:.2%}"
         )
 
+        st.subheader("Detected Defects")
         st.table(display_df)
 
         st.subheader("Defect Distribution")
+        st.bar_chart(df["Defect Type"].value_counts())
 
-        counts = df["Defect Type"].value_counts()
+        defect_types = ", ".join(df["Defect Type"].unique())
 
-        st.bar_chart(counts)
+    else:
+        defect_types = "None"
+
+    # Save inspection history
+    new_record = pd.DataFrame([{
+        "Image": file.name,
+        "Status": status,
+        "Defect Count": defect_count,
+        "Defect Types": defect_types
+    }])
+
+    if HISTORY.exists():
+        old_history = pd.read_csv(HISTORY)
+        history = pd.concat(
+            [old_history, new_record],
+            ignore_index=True
+        )
+    else:
+        history = new_record
+
+    history.to_csv(HISTORY, index=False)
+
+st.subheader("Inspection History")
+
+if HISTORY.exists():
+    history = pd.read_csv(HISTORY)
+    st.dataframe(history, use_container_width=True)
+else:
+    st.info("No inspection history yet.")
