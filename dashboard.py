@@ -32,8 +32,6 @@ if file:
     )
 
     result = results[0]
-
-    # Create annotated image
     annotated = result.plot()
 
     st.image(
@@ -42,19 +40,33 @@ if file:
         channels="BGR"
     )
 
-    if len(result.boxes) == 0:
-        st.success("PASS - No defect detected")
-    else:
-        st.error(
-            f"DEFECT DETECTED - {len(result.boxes)} defect(s)"
-        )
+    defect_count = len(result.boxes)
 
+    st.subheader("Inspection Summary")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Defect Count", defect_count)
+
+    with col2:
+        if defect_count == 0:
+            st.success("PASS")
+        else:
+            st.error("DEFECT DETECTED")
+
+    if defect_count > 0:
         st.subheader("Detected Defects")
+
+        data = []
 
         for box in result.boxes:
             name = result.names[int(box.cls[0])]
             confidence = float(box.conf[0])
 
-            st.write(
-                f"**{name}** — Confidence: {confidence:.2%}"
-            )
+            data.append({
+                "Defect Type": name,
+                "Confidence": f"{confidence:.2%}"
+            })
+
+        st.table(data)
