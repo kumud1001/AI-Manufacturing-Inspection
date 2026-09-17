@@ -1,65 +1,49 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
 from pathlib import Path
+from fastapi import FastAPI, UploadFile, File
+from ultralytics import YOLO
 import shutil
-import uuid
 
-from ai.predict import QualityInspector
+app = FastAPI(title="AI Manufacturing Quality Inspection")
 
+ROOT = Path(__file__).resolve().parent.parent
+MODEL = ROOT / "results" / "quick_test" / "weights" / "best.pt"
+UPLOADS = ROOT / "uploads"
 
-app = FastAPI(
-    title="AI Manufacturing Quality Inspection API",
-    version="1.0.0"
-)
+UPLOADS.mkdir(exist_ok=True)
 
-
-UPLOAD_DIR = Path("data/uploads")
-UPLOAD_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-
-inspector = QualityInspector()
+model = YOLO(MODEL)
 
 
 @app.get("/")
 def home():
-
-    return {
-        "system": "AI Manufacturing Quality Inspection",
-        "status": "running"
-    }
+    return {"message": "AI Manufacturing Inspection API is running"}
 
 
-@app.get("/health")
-def health():
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    image = UPLOADS / file.filename
 
-    return {
-        "status": "healthy"
-    }
+    with open(image, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-
-@app.post("/inspect")
-async def inspect_product(
-    file: UploadFile = File(...)
-):
-
-    file_id = str(uuid.uuid4())
-
-    file_path = UPLOAD_DIR / f"{file_id}_{file.filename}"
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(
-            file.file,
-            buffer
-        )
-
-    result = inspector.inspect(
-        str(file_path)
+    results = model.predict(
+        source=image,
+        imgsz=320,
+        conf=0.25,
+        device="cpu"
     )
 
-    return JSONResponse({
-        "file": file.filename,
-        "inspection": result
-    })
+    detections = []
+
+    for result in results:
+        for box in result.boxes:
+            detections.append({
+                "class": result.names[int(box.cls[0])],
+                "confidence": round(float(box.conf[0]), 3),
+                "box": [round(float(x), 2) for x in box.xyxy[0]]
+            })
+
+    return {
+        "filename": file.filename,
+        "detections": detections
+    }
