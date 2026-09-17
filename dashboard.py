@@ -33,12 +33,23 @@ if file:
 
     result = results[0]
 
-    st.image(image_path, caption="PCB Image")
+    # Create annotated image
+    annotated = result.plot()
+
+    st.image(
+        annotated,
+        caption="Inspection Result",
+        channels="BGR"
+    )
 
     if len(result.boxes) == 0:
         st.success("PASS - No defect detected")
     else:
-        st.error(f"DEFECT DETECTED - {len(result.boxes)} defect(s)")
+        st.error(
+            f"DEFECT DETECTED - {len(result.boxes)} defect(s)"
+        )
+
+        st.subheader("Detected Defects")
 
         for box in result.boxes:
             name = result.names[int(box.cls[0])]
