@@ -71,6 +71,26 @@ if HISTORY.exists():
 else:
     st.info("No inspection history available yet.")
 
+    
+# Inspection Status Distribution
+st.subheader("Inspection Status Distribution")
+
+if HISTORY.exists():
+    status_summary = pd.read_csv(HISTORY)
+
+    status_counts = status_summary["Status"].value_counts()
+
+    st.bar_chart(status_counts)
+
+    status_df = status_counts.reset_index()
+    status_df.columns = ["Status", "Count"]
+
+    st.dataframe(status_df, use_container_width=True)
+else:
+    st.info("No inspection history available yet.")
+
+
+
 
 
 file = st.file_uploader(
