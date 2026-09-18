@@ -98,6 +98,23 @@ file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
+# Recent Inspections
+st.subheader("Recent Inspections")
+
+if HISTORY.exists():
+    recent_history = pd.read_csv(HISTORY)
+
+    recent_history = recent_history.iloc[::-1].head(5)
+
+    st.dataframe(
+        recent_history,
+        use_container_width=True,
+        hide_index=True
+    )
+else:
+    st.info("No recent inspections available.")
+
+
 if file:
     upload_dir = ROOT / "uploads"
     upload_dir.mkdir(exist_ok=True)
