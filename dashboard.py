@@ -43,6 +43,34 @@ if HISTORY.exists():
         st.metric("Defect Rate", f"{defect_rate:.1f}%")
 else:
     st.info("No inspection data available yet.")
+    
+# Defect Type Summary
+st.subheader("Defect Type Summary")
+
+if HISTORY.exists():
+    history_summary = pd.read_csv(HISTORY)
+
+    defect_records = []
+
+    for types in history_summary["Defect Types"].dropna():
+        if types != "None":
+            for defect in str(types).split(","):
+                defect_records.append(defect.strip())
+
+    if defect_records:
+        defect_summary = pd.Series(defect_records).value_counts()
+
+        st.bar_chart(defect_summary)
+
+        summary_df = defect_summary.reset_index()
+        summary_df.columns = ["Defect Type", "Count"]
+
+        st.dataframe(summary_df, use_container_width=True)
+    else:
+        st.info("No defects have been detected yet.")
+else:
+    st.info("No inspection history available yet.")
+
 
 
 file = st.file_uploader(
