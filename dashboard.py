@@ -12,6 +12,39 @@ model = YOLO(MODEL)
 st.title("AI Manufacturing Quality Inspection")
 st.write("Upload a PCB image for automated defect detection.")
 
+
+# Dashboard Overview
+st.subheader("Inspection Overview")
+
+if HISTORY.exists():
+    overview = pd.read_csv(HISTORY)
+
+    total_inspections = len(overview)
+    defect_inspections = (overview["Status"] == "DEFECT DETECTED").sum()
+    passed_inspections = (overview["Status"] == "PASS").sum()
+
+    if total_inspections > 0:
+        defect_rate = (defect_inspections / total_inspections) * 100
+    else:
+        defect_rate = 0
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Total Inspections", total_inspections)
+
+    with col2:
+        st.metric("Defect Inspections", defect_inspections)
+
+    with col3:
+        st.metric("Passed Inspections", passed_inspections)
+
+    with col4:
+        st.metric("Defect Rate", f"{defect_rate:.1f}%")
+else:
+    st.info("No inspection data available yet.")
+
+
 file = st.file_uploader(
     "Upload PCB Image",
     type=["jpg", "jpeg", "png"]
